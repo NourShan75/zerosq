@@ -1,5 +1,5 @@
 from copy import deepcopy
-from collections import deque
+
 class Square:
     def __init__(self, x, y, type, prev_type):
         self.x = x
@@ -42,9 +42,9 @@ class State:
     def isGoal(self):
      for row in self.board:
         for square in row:
-            if square.type == "target":  # If there’s still a target square
+            if square.type == "target":  
                  return False
-     return True  # Goal is reached when no target squares are left
+     return True  
 
 
     def move(self, direction):
@@ -173,32 +173,31 @@ class Game:
         for index, s in enumerate(path):
             print(f"Step {index + 1}:\n{s}")
 
-    def bfs(self):
-        queue = deque([self.init_state])  
-        visited = set()   
+
+    def dfs(self):
+        stack = [self.init_state]   
+        visited = set()  
         visited_nodes_count = 0  
 
-        while queue:
-            current_state = queue.popleft()
+        while stack:
+            current_state = stack.pop()  
 
             if current_state.isGoal():  
-                print("Goal Found and Path to Goal:")
+                print("Goal Found Path to Goal:")
                 self.print_path(current_state)
                 print("Number of visited nodes:", visited_nodes_count)  
                 return
 
-            visited.add(str(current_state)) 
+            visited.add(str(current_state))  
             visited_nodes_count += 1  
 
             for move in current_state.getAllPossibleMoves():
                 if str(move) not in visited:
                     move.parent = current_state  
-                    queue.append(move) 
+                    stack.append(move)  
 
         print("Goal not found")
         print("Number of visited nodes:", visited_nodes_count)  
-
-
     
         
     def start(self):
@@ -232,19 +231,14 @@ class Game:
             self.init_state.compare_states(previous_state, self.init_state)
     
     
-
-
-
-
 def main():
     board_1 = [
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬜️", "⬜️", "⬜️"],
-        ["⬛️", "⬜️", "⬜️", "⬜️", "🔴", "⬛️", "⬛️", "⬜️", "⬜️"],
+        ["⬛️", "⬜️", "⬜️", "🔴", "⬜️", "⬛️", "⬛️", "⬜️", "⬜️"],
         ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬛️", "⬛️", "⬛️"],
         ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "🟥", "⬜️", "⬛️"],
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️"],
     ]
-    
     rows = len(board_1)
     columns = len(board_1[0])
 
@@ -269,7 +263,7 @@ def main():
     print("Initial State:")
     print(init_state)
     game = Game(init_state)
-    game.bfs() 
+    game.dfs() 
 
 
 if __name__ == "__main__":
