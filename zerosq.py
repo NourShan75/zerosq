@@ -1,5 +1,5 @@
 from copy import deepcopy
-
+from collections import deque
 class Square:
     def __init__(self, x, y, type, prev_type):
         self.x = x
@@ -18,10 +18,11 @@ class Square:
             return '🔴'
 
 class State:
-    def __init__(self, rows, columns, board):
+    def __init__(self, rows, columns, board,parent):
         self.columns = columns
         self.rows = rows
         self.board = board
+        self.parent = parent 
 
     def __str__(self):
         result = ""
@@ -39,11 +40,12 @@ class State:
      return None
     
     def isGoal(self):
-        for rows in self.board:
-            for square in rows:
-                if square.type == "empty" or square.type == "block":
-                    return False
-        return True
+     for row in self.board:
+        for square in row:
+            if square.type == "target":  # If there’s still a target square
+                 return False
+     return True  # Goal is reached when no target squares are left
+
 
     def move(self, direction):
         color_x, color_y = self.getColorCoord()
@@ -92,11 +94,11 @@ class State:
 
     def getAllPossibleMoves(self):
      directions = ["up", "down", "left", "right"]
-     possible_states = []
+     children = []
 
      color_coord = self.getColorCoord()
      if color_coord is None:
-        return possible_states
+        return children
 
      color_x, color_y = color_coord
      for direction in directions:
@@ -110,8 +112,8 @@ class State:
         elif direction == "right":
             dx, dy = 0, 1
 
-        new_state = State(self.rows, self.columns, [[Square(sq.x, sq.y, sq.type, sq.prev_type) for sq in row] for row in self.board])
-        
+        new_state = State(self.rows, self.columns, [[Square(sq.x, sq.y, sq.type, sq.prev_type) for sq in row] for row in self.board], None)
+         
         temp_color_x, temp_color_y = color_x, color_y
 
         while new_state.checkMove(temp_color_x, temp_color_y, dx, dy):
@@ -130,9 +132,9 @@ class State:
 
             temp_color_x, temp_color_y = new_color_x, new_color_y
 
-        possible_states.append(deepcopy(new_state))
+        children.append(deepcopy(new_state))
 
-     return possible_states
+     return children
 
 
     def __eq__(self, other):
@@ -148,17 +150,54 @@ class State:
     def compare_states(self, state1, state2):
         print("Are states equal?", state1 == state2)
 
+     
+
 class Game:
     def __init__(self, init_state):
         self.init_state = init_state
         self.states = [deepcopy(init_state)]  
-        self.start()
-
+        
+    
     def print_all_states(self):
         print("\nAll Stored States:\n")
         for index, state in enumerate(self.states):
             print(f"State {index + 1}:")
             print(state)
+    
+    def print_path(self, state):
+        path = []
+        while state:
+            path.append(state)
+            state = state.parent
+        path.reverse()  
+        for index, s in enumerate(path):
+            print(f"Step {index + 1}:\n{s}")
+
+    def bfs(self):
+        queue = deque([self.init_state])  
+        visited = set()   
+        visited_nodes_count = 0  
+
+        while queue:
+            current_state = queue.popleft()
+
+            if current_state.isGoal():  
+                print("Goal Found and Path to Goal:")
+                self.print_path(current_state)
+                print("Number of visited nodes:", visited_nodes_count)  
+                return
+
+            visited.add(str(current_state)) 
+            visited_nodes_count += 1  
+
+            for move in current_state.getAllPossibleMoves():
+                if str(move) not in visited:
+                    move.parent = current_state  
+                    queue.append(move) 
+
+        print("Goal not found")
+        print("Number of visited nodes:", visited_nodes_count)  
+
 
     
         
@@ -185,20 +224,27 @@ class Game:
             print("Current State:")
             print(self.init_state) 
             self.print_all_states()
-            possible_states = self.init_state.getAllPossibleMoves()
+            children = self.init_state.getAllPossibleMoves()
             print("Possible moves:")
-            for state in possible_states:
+            for state in children:
                 if not state ==self.init_state:
                  print(state)
             self.init_state.compare_states(previous_state, self.init_state)
+    
+    
+
+
+
+
 def main():
     board_1 = [
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬜️", "⬜️", "⬜️"],
-        ["⬛️", "⬜️", "⬜️", "🔴", "⬜️", "⬛️", "⬛️", "⬜️", "⬜️"],
+        ["⬛️", "⬜️", "⬜️", "⬜️", "🔴", "⬛️", "⬛️", "⬜️", "⬜️"],
         ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬛️", "⬛️", "⬛️"],
-        ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "🟥", "⬛️"],
+        ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "🟥", "⬜️", "⬛️"],
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️"],
     ]
+    
     rows = len(board_1)
     columns = len(board_1[0])
 
@@ -219,10 +265,12 @@ def main():
                 prev_type = '⬜️'
             board[i][j] = Square(i, j, square_type, prev_type)
 
-    init_state = State(rows, columns, board)
+    init_state = State(rows, columns, board,None)
     print("Initial State:")
     print(init_state)
     game = Game(init_state)
+    game.bfs() 
+
 
 if __name__ == "__main__":
     main()
