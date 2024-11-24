@@ -156,8 +156,7 @@ class Game:
     def __init__(self, init_state):
         self.init_state = init_state
         self.states = [deepcopy(init_state)]  
-        
-    
+
     def print_all_states(self):
         print("\nAll Stored States:\n")
         for index, state in enumerate(self.states):
@@ -172,34 +171,32 @@ class Game:
         path.reverse()  
         for index, s in enumerate(path):
             print(f"Step {index + 1}:\n{s}")
+    
+    def dfs_recursive(self, current_state, visited, visited_nodes_count):
+        if current_state.isGoal():  
+            print("Goal Found Path to Goal:")
+            self.print_path(current_state)
+            print("Number of visited nodes:", visited_nodes_count)  
+            return True  
 
+        visited.add(str(current_state))  
+        visited_nodes_count += 1  
+
+        for move in current_state.getAllPossibleMoves():
+            if str(move) not in visited:
+                move.parent = current_state  
+                if self.dfs_recursive(move, visited, visited_nodes_count):
+                    return True
+        
+        return False  
 
     def dfs(self):
-        stack = [self.init_state]   
-        visited = set()  
+        visited = set() 
         visited_nodes_count = 0  
-
-        while stack:
-            current_state = stack.pop()  
-
-            if current_state.isGoal():  
-                print("Goal Found Path to Goal:")
-                self.print_path(current_state)
-                print("Number of visited nodes:", visited_nodes_count)  
-                return
-
-            visited.add(str(current_state))  
-            visited_nodes_count += 1  
-
-            for move in current_state.getAllPossibleMoves():
-                if str(move) not in visited:
-                    move.parent = current_state  
-                    stack.append(move)  
-
-        print("Goal not found")
-        print("Number of visited nodes:", visited_nodes_count)  
-    
+        self.dfs_recursive(self.init_state, visited, visited_nodes_count)
         
+        
+
     def start(self):
         while not self.init_state.isGoal():
             print('Enter 8 5 4 6 , for up, down, left, right')
@@ -215,7 +212,6 @@ class Game:
             else:
                 print('Please type 8, 6, 5, or 4 to move.\n')
                 
-            
             previous_state = deepcopy(self.states[-1])
 
             self.states.append(deepcopy(self.init_state))
@@ -229,8 +225,7 @@ class Game:
                 if not state ==self.init_state:
                  print(state)
             self.init_state.compare_states(previous_state, self.init_state)
-    
-    
+
 def main():
     board_1 = [
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬜️", "⬜️", "⬜️"],
