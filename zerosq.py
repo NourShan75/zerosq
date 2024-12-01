@@ -44,13 +44,6 @@ class State:
                     return square.x, square.y
         return None
 
-    def isGoal(self):
-        for row in self.board:
-            for square in row:
-                if square.type == "target":
-                    return False
-        return True  
-
     def heuristic(self):
         color_coord = self.getColorCoord()
         if color_coord is None:  
@@ -64,7 +57,14 @@ class State:
                     target_x, target_y = square.x, square.y
                     return abs(target_x - color_x) + abs(target_y - color_y)  
         
-        return float('inf')  
+        return float('inf') 
+
+    def isGoal(self):
+        for row in self.board:
+            for square in row:
+                if square.type == "target":
+                    return False
+        return True   
 
 
     def move(self, direction):
@@ -194,8 +194,8 @@ class Game:
             for move in current_state.getAllPossibleMoves():
                 move.parent = current_state
                 heappush(priority_queue, (move.cost + move.heuristic(), move))
-
         print("Goal not found")
+
 
 def main():
     board_1 = [
