@@ -19,12 +19,12 @@ class Square:
             return '🔴'
 
 class State:
-    def __init__(self, rows, columns, board,parent=None,cost=0):
+    def __init__(self, rows, columns, board, parent=None, cost=0):
         self.columns = columns
         self.rows = rows
         self.board = board
         self.parent = parent 
-        self.cost=cost
+        self.cost = cost
 
     def __str__(self):
         result = ""
@@ -35,22 +35,36 @@ class State:
         return result
 
     def __lt__(self, other):
-        return self.cost < other.cost
-    
+        return (self.cost + self.heuristic()) < (other.cost + other.heuristic())
 
     def getColorCoord(self):
-     for rows in self.board:
-        for square in rows:
-            if square.type == 'color':
-                return square.x, square.y
-     return None
-    
+        for rows in self.board:
+            for square in rows:
+                if square.type == 'color':
+                    return square.x, square.y
+        return None
+
     def isGoal(self):
-     for row in self.board:
-        for square in row:
-            if square.type == "target":  
-                 return False
-     return True  
+        for row in self.board:
+            for square in row:
+                if square.type == "target":
+                    return False
+        return True  
+
+    def heuristic(self):
+        color_coord = self.getColorCoord()
+        if color_coord is None:  
+            return float('inf')  
+        
+        color_x, color_y = color_coord
+        
+        for row in self.board:
+            for square in row:
+                if square.type == "target":
+                    target_x, target_y = square.x, square.y
+                    return abs(target_x - color_x) + abs(target_y - color_y)  
+        
+        return float('inf')  
 
 
     def move(self, direction):
@@ -86,7 +100,6 @@ class State:
             color_y = new_color_y
 
         return 0
-
 
     def checkMove(self, color_x, color_y, dx, dy):
         if color_x + dx < 0 or color_x + dx >= self.rows:
@@ -148,32 +161,10 @@ class State:
 
         return children
 
-    def __eq__(self, other):
-        if not isinstance(other, State):
-            return False
-        if self.rows != other.rows or self.columns != other.columns:
-            return False
-        for i in range(self.rows):
-            for j in range(self.columns):
-                if self.board[i][j].type != other.board[i][j].type:
-                    return False
-        return True       
-    def compare_states(self, state1, state2):
-        print("Are states equal?", state1 == state2)
-
-     
-
 class Game:
     def __init__(self, init_state):
         self.init_state = init_state
         self.states = [deepcopy(init_state)]  
-        
-    
-    def print_all_states(self):
-        print("\nAll Stored States:\n")
-        for index, state in enumerate(self.states):
-            print(f"State {index + 1}:")
-            print(state)
     
     def print_path(self, state):
         path = []
@@ -184,15 +175,15 @@ class Game:
         for index, s in enumerate(path):
             print(f"Step {index + 1}:\n{s}")
 
-
-    def ucs(self):
+    def a_star(self):
         priority_queue = []
-        visited = set()    
-        heappush(priority_queue, (0, self.init_state))  
+        visited = set()
+        heappush(priority_queue, (self.init_state.cost + self.init_state.heuristic(), self.init_state))
+        
         while priority_queue:
-            current_cost, current_state = heappop(priority_queue)
+            _, current_state = heappop(priority_queue)
             if current_state.isGoal():
-                print("Goal Found with Cost:", current_cost)
+                print("Goal Found with Cost:", current_state.cost)
                 self.print_path(current_state)
                 return
 
@@ -202,54 +193,22 @@ class Game:
 
             for move in current_state.getAllPossibleMoves():
                 move.parent = current_state
-                heappush(priority_queue, (move.cost, move))  
+                heappush(priority_queue, (move.cost + move.heuristic(), move))
 
         print("Goal not found")
-    
-        
-    def start(self):
-        while not self.init_state.isGoal():
-            print('Enter 8 5 4 6 , for up, down, left, right')
-            user_input = input()
-            if user_input == '8':
-                self.init_state.move('up')
-            elif user_input == '5':
-                self.init_state.move('down')
-            elif user_input == '6':
-                self.init_state.move('right')
-            elif user_input == '4':
-                self.init_state.move('left')
-            else:
-                print('Please type 8, 6, 5, or 4 to move.\n')
-                
-            
-            previous_state = deepcopy(self.states[-1])
 
-            self.states.append(deepcopy(self.init_state))
-
-            print("Current State:")
-            print(self.init_state) 
-            self.print_all_states()
-            children = self.init_state.getAllPossibleMoves()
-            print("Possible moves:")
-            for state in children:
-                if not state ==self.init_state:
-                 print(state)
-            self.init_state.compare_states(previous_state, self.init_state)
-    
-    
 def main():
     board_1 = [
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬜️", "⬜️", "⬜️"],
         ["⬛️", "⬜️", "⬜️", "🔴", "⬜️", "⬛️", "⬛️", "⬜️", "⬜️"],
         ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬛️", "⬛️", "⬛️"],
-        ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "🟥", "⬛️"],
+        ["⬛️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "🟥", "⬜️", "⬛️"],
         ["⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️", "⬛️"],
     ]
     rows = len(board_1)
     columns = len(board_1[0])
 
-    board = [[None for b in range(columns)] for b in range(rows)]
+    board = [[None for _ in range(columns)] for _ in range(rows)]
 
     for i in range(rows):
         for j in range(columns):
@@ -266,12 +225,11 @@ def main():
                 prev_type = '⬜️'
             board[i][j] = Square(i, j, square_type, prev_type)
 
-    init_state = State(rows, columns, board,None,0)
+    init_state = State(rows, columns, board, None, 0)
     print("Initial State:")
     print(init_state)
     game = Game(init_state)
-    game.ucs() 
-
+    game.a_star()
 
 if __name__ == "__main__":
     main()
